@@ -15,6 +15,9 @@ let audioDevices = AudioDevice.getAll()
 let inputAudioDevices = audioDevices.filter { $0.type == .input }
 let outputAudioDevices = audioDevices.filter { $0.type == .output }
 
+var speakers = 0
+var headphones = 0
+
 
 @main
 struct OutputSwitcherApp: App {
@@ -44,7 +47,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 func setAudioDevice(id: Int) {
-    guard let outputAudioDevice = outputAudioDevices.first(where: { $0.id == id }) else {
+    guard let outputAudioDevice = outputAudioDevices.first(where: { $0.id == (id == 0 ? speakers : headphones) }) else {
         print("The AudioDeviceID doesn't exist!")
         return
     }
@@ -69,6 +72,16 @@ class StatusBarController {
             
         }
         
+        if let speakersAudioDevice = outputAudioDevices.first(where: { $0.name == "Realtek USB2.0 Audio" }) {
+            speakers = Int(speakersAudioDevice.id)
+            print("Found speakers!")
+        }
+
+        if let headphoneAudioDevice = outputAudioDevices.first(where: { $0.name == "RODE NT-USB" }) {
+            headphones = Int(headphoneAudioDevice.id)
+            print("Found headphones!")
+        }
+
         // 81 = RODE
         // 61 = line out
 
@@ -92,16 +105,16 @@ class StatusBarController {
             statusBarButton.target = self
         }
 
-        registerHotkey(keyCode: kVK_F16, id: 61)
-        registerHotkey(keyCode: kVK_F17, id: 81)
+        registerHotkey(keyCode: kVK_F16, id: 0)
+        registerHotkey(keyCode: kVK_F17, id: 1)
     }
     
     @objc func output_line_out(sender: AnyObject) {
-        setAudioDevice(id: 61)
+        setAudioDevice(id: 0)
     }
 
     @objc func output_head_phones(sender: AnyObject) {
-        setAudioDevice(id: 81)
+        setAudioDevice(id: 1)
     }
 }
 
