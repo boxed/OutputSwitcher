@@ -11,12 +11,8 @@ import AppKit
 import CoreAudio
 import Carbon
 
-let audioDevices = AudioDevice.getAll()
-let inputAudioDevices = audioDevices.filter { $0.type == .input }
-let outputAudioDevices = audioDevices.filter { $0.type == .output }
-
-var speakers = 0
-var headphones = 0
+let speakers = 1
+let headphones = 2
 
 
 @main
@@ -47,12 +43,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 func setAudioDevice(id: Int) {
-    guard let outputAudioDevice = outputAudioDevices.first(where: { $0.id == (id == 0 ? speakers : headphones) }) else {
-        print("The AudioDeviceID doesn't exist!")
+    let audioDevices = AudioDevice.getAll()
+    let outputAudioDevices = audioDevices.filter { $0.type == .output }
+
+    do {
+        let jsonEncodedData = try JSONEncoder().encode(audioDevices)
+        let data = String(data: jsonEncodedData, encoding: .utf8)!
+        
+        print(data)
+    }
+    catch {
+    }
+    
+    let deviceName: String
+    
+    switch id {
+    case speakers:
+        deviceName = "Realtek USB2.0 Audio"
+    case headphones:
+        deviceName = "RODE NT-USB"
+    default:
+        print("Device not found!")
         return
     }
-        
-    outputAudioDevice.setAsDefault()
+    
+    if let audioDevice = outputAudioDevices.first(where: { $0.name == deviceName}) {
+        audioDevice.setAsDefault()
+    }
 }
   
 
@@ -62,29 +79,6 @@ class StatusBarController {
     private var headPhoneItem: NSStatusItem
     
     init() {
-        do {
-            let jsonEncodedData = try JSONEncoder().encode(audioDevices)
-            let data = String(data: jsonEncodedData, encoding: .utf8)!
-            
-            print(data)
-        }
-        catch {
-            
-        }
-        
-        if let speakersAudioDevice = outputAudioDevices.first(where: { $0.name == "Realtek USB2.0 Audio" }) {
-            speakers = Int(speakersAudioDevice.id)
-            print("Found speakers!")
-        }
-
-        if let headphoneAudioDevice = outputAudioDevices.first(where: { $0.name == "RODE NT-USB" }) {
-            headphones = Int(headphoneAudioDevice.id)
-            print("Found headphones!")
-        }
-
-        // 81 = RODE
-        // 61 = line out
-
         statusBar = NSStatusBar.init()
 
         // Creating a status bar item having a fixed length
@@ -94,7 +88,7 @@ class StatusBarController {
         if let statusBarButton = headPhoneItem.button {
             statusBarButton.title = "🎧"
 
-            statusBarButton.action = #selector(output_head_phones(sender:))
+            statusBarButton.action = #selector(output_headphones(sender:))
             statusBarButton.target = self
         }
 
@@ -105,16 +99,16 @@ class StatusBarController {
             statusBarButton.target = self
         }
 
-        registerHotkey(keyCode: kVK_F16, id: 0)
-        registerHotkey(keyCode: kVK_F17, id: 1)
+        registerHotkey(keyCode: kVK_F16, id: speakers)
+        registerHotkey(keyCode: kVK_F17, id: headphones)
     }
     
     @objc func output_line_out(sender: AnyObject) {
-        setAudioDevice(id: 0)
+        setAudioDevice(id: speakers)
     }
 
-    @objc func output_head_phones(sender: AnyObject) {
-        setAudioDevice(id: 1)
+    @objc func output_headphones(sender: AnyObject) {
+        setAudioDevice(id: headphones)
     }
 }
 
@@ -329,7 +323,7 @@ func registerHotkey(keyCode: Int, id: Int) {
         
         setAudioDevice(id: Int(hkCom.id))
         
-        NSLog("Command + R Released! %d", hkCom.id)
+        NSLog("Hotkey hit! %d", hkCom.id)
 
       return noErr
     }, 1, &eventType, nil, nil)

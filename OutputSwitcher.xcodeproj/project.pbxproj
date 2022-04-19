@@ -14,6 +14,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		AE1997BD28088221000CBDC4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		AEA4CC3A2805A50100972546 /* OutputSwitcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OutputSwitcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AEA4CC3D2805A50100972546 /* OutputSwitcherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputSwitcherApp.swift; sourceTree = "<group>"; };
 		AEA4CC3F2805A50100972546 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -52,6 +53,7 @@
 		AEA4CC3C2805A50100972546 /* OutputSwitcher */ = {
 			isa = PBXGroup;
 			children = (
+				AE1997BD28088221000CBDC4 /* Info.plist */,
 				AEA4CC3D2805A50100972546 /* OutputSwitcherApp.swift */,
 				AEA4CC3F2805A50100972546 /* ContentView.swift */,
 				AEA4CC412805A50300972546 /* Assets.xcassets */,
@@ -276,6 +278,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OutputSwitcher/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -305,6 +308,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OutputSwitcher/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
