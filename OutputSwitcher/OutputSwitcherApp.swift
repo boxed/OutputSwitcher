@@ -27,83 +27,42 @@ struct OutputSwitcherApp: App {
 }
 
 
+var statusBar = NSStatusBar.init()
+var statusBarItem = statusBar.statusItem(withLength: 28.0)
+var headphonesSelector: Selector?
+var speakersSelector: Selector?
+let speakersName = "Realtek USB2.0 Audio"
+let headphoneName = "RODE NT-USB"
+
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var statusBar: StatusBarController?
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         if let window = NSApplication.shared.windows.first {
             window.close()
         }
         
-        statusBar = StatusBarController.init()
+        speakersSelector = #selector(output_speakers(sender:))
+        headphonesSelector = #selector(output_headphones(sender:))
+
+        registerHotkey(keyCode: kVK_F16, id: speakers, modifierFlags: 0)
+        registerHotkey(keyCode: kVK_F17, id: headphones, modifierFlags: 0)
+        
+        let audioDevices = AudioDevice.getAll()
+        let outputAudioDevices = audioDevices.filter { $0.type == .output }
+        if let audioDevice = outputAudioDevices.first(where: { $0.isDefault}) {
+            if audioDevice.name == headphoneName {
+                self.output_headphones(sender: self)
+            }
+            else {
+                self.output_speakers(sender: self)
+            }
+        }
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
     }
-}
 
-func setAudioDevice(id: Int) {
-    let audioDevices = AudioDevice.getAll()
-    let outputAudioDevices = audioDevices.filter { $0.type == .output }
-
-    do {
-        let jsonEncodedData = try JSONEncoder().encode(audioDevices)
-        let data = String(data: jsonEncodedData, encoding: .utf8)!
-        
-        print(data)
-    }
-    catch {
-    }
-    
-    let deviceName: String
-    
-    switch id {
-    case speakers:
-        deviceName = "Realtek USB2.0 Audio"
-    case headphones:
-        deviceName = "RODE NT-USB"
-    default:
-        print("Device not found!")
-        return
-    }
-    
-    if let audioDevice = outputAudioDevices.first(where: { $0.name == deviceName}) {
-        audioDevice.setAsDefault()
-    }
-}
-  
-
-class StatusBarController {
-    private var statusBar: NSStatusBar
-    private var lineOutItem: NSStatusItem
-    private var headPhoneItem: NSStatusItem
-    
-    init() {
-        statusBar = NSStatusBar.init()
-
-        // Creating a status bar item having a fixed length
-        headPhoneItem = statusBar.statusItem(withLength: 28.0)
-        lineOutItem = statusBar.statusItem(withLength: 28.0)
-
-        if let statusBarButton = headPhoneItem.button {
-            statusBarButton.title = "🎧"
-
-            statusBarButton.action = #selector(output_headphones(sender:))
-            statusBarButton.target = self
-        }
-
-        if let statusBarButton = lineOutItem.button {
-            statusBarButton.title = "🔈"
-
-            statusBarButton.action = #selector(output_line_out(sender:))
-            statusBarButton.target = self
-        }
-
-        registerHotkey(keyCode: kVK_F16, id: speakers)
-        registerHotkey(keyCode: kVK_F17, id: headphones)
-    }
-    
-    @objc func output_line_out(sender: AnyObject) {
+    @objc func output_speakers(sender: AnyObject) {
         setAudioDevice(id: speakers)
     }
 
@@ -111,6 +70,48 @@ class StatusBarController {
         setAudioDevice(id: headphones)
     }
 }
+
+func setAudioDevice(id: Int) {
+    let audioDevices = AudioDevice.getAll()
+    let outputAudioDevices = audioDevices.filter { $0.type == .output }
+
+//    do {
+//        let jsonEncodedData = try JSONEncoder().encode(audioDevices)
+//        let data = String(data: jsonEncodedData, encoding: .utf8)!
+//
+//        print(data)
+//    }
+//    catch {
+//    }
+    
+    let deviceName: String
+    let title: String
+    let selector: Selector
+    
+    switch id {
+    case speakers:
+        title = "🔈"
+        selector = headphonesSelector!
+        deviceName = speakersName
+    case headphones:
+        title = "🎧"
+        selector = speakersSelector!
+        deviceName = headphoneName
+    default:
+        print("Device not found!")
+        return
+    }
+    
+    if let statusBarButton = statusBarItem.button {
+        statusBarButton.title = title
+        statusBarButton.action = selector
+    }
+    
+    if let audioDevice = outputAudioDevices.first(where: { $0.name == deviceName}) {
+        audioDevice.setAsDefault()
+    }
+}
+  
 
 // https://github.com/hladik-dan/switch-audio
 class AudioDevice: Encodable {
@@ -293,9 +294,8 @@ func getCarbonFlagsFromCocoaFlags(cocoaFlags: NSEvent.ModifierFlags) -> UInt32 {
 }
 
 
-func registerHotkey(keyCode: Int, id: Int) {
+func registerHotkey(keyCode: Int, id: Int, modifierFlags: UInt32) {
     var hotKeyRef: EventHotKeyRef?
-    let modifierFlags: UInt32 = getCarbonFlagsFromCocoaFlags(cocoaFlags: NSEvent.ModifierFlags.command)
 
     var gMyHotKeyID = EventHotKeyID()
     gMyHotKeyID.id = UInt32(id)
@@ -311,21 +311,18 @@ func registerHotkey(keyCode: Int, id: Int) {
     // Install handler.
     InstallEventHandler(GetApplicationEventTarget(), {
       (nextHanlder, theEvent, userData) -> OSStatus in
-       var hkCom = EventHotKeyID()
+        var hkCom = EventHotKeyID()
 
-       GetEventParameter(theEvent,
-                         EventParamName(kEventParamDirectObject),
-                         EventParamType(typeEventHotKeyID),
-                         nil,
-                         MemoryLayout<EventHotKeyID>.size,
-                         nil,
-                         &hkCom)
+        GetEventParameter(theEvent,
+                          EventParamName(kEventParamDirectObject),
+                          EventParamType(typeEventHotKeyID),
+                          nil,
+                          MemoryLayout<EventHotKeyID>.size,
+                          nil,
+                          &hkCom)
         
         setAudioDevice(id: Int(hkCom.id))
-        
-        NSLog("Hotkey hit! %d", hkCom.id)
-
-      return noErr
+        return noErr
     }, 1, &eventType, nil, nil)
 
     // Register hotkey.
